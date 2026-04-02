@@ -1,0 +1,86 @@
+enum Role {
+  USER
+  ADMIN
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+
+  emailVerified Boolean  @default(false)
+
+  otpCode       String?
+  otpExpires    DateTime?
+
+  createdAt DateTime @default(now())
+
+  workouts        Workout[]
+  profile         Profile?
+  rank            Rank?
+  streak          Streak?
+  completions     WorkoutCompletion[]
+}
+
+model Workout {
+  id        String   @id @default(uuid())
+  level     String
+  daysPerWeek Int
+  data      Json
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  completions WorkoutCompletion[]
+}
+
+model Profile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  displayName        String?
+  level              String
+  workoutDaysPerWeek Int
+  onboardingComplete Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Rank {
+  id          String @id @default(uuid())
+  userId      String @unique
+  xp          Int    @default(0)
+  tier        String @default("Bronze")
+  level       Int    @default(1)
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Streak {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastWorkoutDate DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model WorkoutCompletion {
+  id        String   @id @default(uuid())
+  userId    String
+  workoutId String
+  dayName   String
+  completedAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  workout Workout @relation(fields: [workoutId], references: [id])
+}
